@@ -1,0 +1,167 @@
+classDiagram
+direction TB
+
+class Person {
+  <<abstract>>
+  -String id
+  -String name
+  -int age
+  -String gender
+  +getRole()* String
+  +describe() String
+}
+class Player {
+  -String position
+  -int jerseyNumber
+  -int goals
+  -PlayingStatus playingStatus
+  +MINIMUM_AGE int
+  +addGoals(int)
+  +getRole() String
+}
+class Coach {
+  -String qualification
+  -String coachingRole
+  -String teamRegNumber
+  +getRole() String
+}
+class LeagueCommissioner {
+  +approveTeam(FootballTeam)
+  +suspendTeam(FootballTeam)
+  +getRole() String
+}
+class MatchOfficial {
+  -String officiatingRole
+  -String rank
+  -boolean available
+  +getRole() String
+}
+class Spectator {
+  -vector~Ticket~ tickets
+  +addTicket(Ticket)
+  +getRole() String
+}
+Person <|-- Player
+Person <|-- Coach
+Person <|-- LeagueCommissioner
+Person <|-- MatchOfficial
+Person <|-- Spectator
+
+class FootballTeam {
+  -String name
+  -String parish
+  -String registrationNumber
+  -TeamStatus status
+  -int played
+  -int points
+  +addPlayer(Player)
+  +removePlayer(String)
+  +addCoach(Coach)
+  +recordMatch(int, int)
+}
+class Stadium {
+  -String id
+  -String name
+  -String location
+  -int seatingCapacity
+  -FieldCondition fieldCondition
+  -double ticketPrice
+  +reserveSeats(String, int)
+  +getRemainingSeats(String) int
+}
+class Fixture {
+  -String id
+  -LocalDate date
+  -LocalTime time
+  -FixtureStatus status
+  +addOfficial(MatchOfficial)
+  +setResult(MatchResult)
+  +markCompleted()
+  +overlaps(LocalTime) boolean
+}
+class MatchResult {
+  -int homeScore
+  -int awayScore
+  -int yellowCards
+  -int redCards
+  -String winner
+}
+class Ticket {
+  -String ticketId
+  -Category category
+  -double price
+}
+class Product {
+  <<abstract>>
+  -String id
+  -String name
+  -double price
+  -int stock
+  +getCategory()* String
+  +removeStock(int)
+}
+class Merchandise {
+  -String size
+  +getCategory() String
+}
+class FoodItem {
+  -boolean beverage
+  +getCategory() String
+}
+Product <|-- Merchandise
+Product <|-- FoodItem
+
+class StadiumShop {
+  -Map inventory
+  +addProduct(Product)
+  +purchase(Map, double) Receipt
+}
+class Receipt {
+  -double subtotal
+  -double tax
+  -double total
+  -double change
+  +addLine(String, int, double)
+  +finish(double)
+}
+class FootballLeague {
+  +registerTeam()
+  +scheduleFixture()
+  +assignOfficial()
+  +recordResult()
+  +sellTickets()
+  +standingsReport() String
+  +save(string)
+  +loadFromFile(string)$
+}
+class KpflException {
+  <<std::runtime_error>>
+}
+class InvalidDataException
+class BusinessRuleException
+class SchedulingConflictException
+class CapacityExceededException
+class InsufficientPaymentException
+KpflException <|-- InvalidDataException
+KpflException <|-- BusinessRuleException
+BusinessRuleException <|-- SchedulingConflictException
+BusinessRuleException <|-- CapacityExceededException
+BusinessRuleException <|-- InsufficientPaymentException
+
+FootballTeam "1" *-- "0..30" Player : squad
+FootballTeam "1" o-- "0..*" Coach : staff
+Fixture "1" *-- "0..1" MatchResult : result
+Fixture --> "2" FootballTeam : home / away
+Fixture --> "1" Stadium : played at
+Fixture "0..*" o-- "0..4" MatchOfficial : officiated by
+Spectator "1" o-- "0..*" Ticket : owns
+Ticket --> Fixture : admits to
+StadiumShop "1" *-- "0..*" Product : inventory
+StadiumShop ..> Receipt : creates
+FootballLeague "1" *-- "0..*" FootballTeam
+FootballLeague "1" *-- "0..*" Stadium
+FootballLeague "1" *-- "0..*" Fixture
+FootballLeague "1" o-- "0..*" MatchOfficial
+FootballLeague "1" o-- "0..*" Spectator
+FootballLeague "1" *-- "1" StadiumShop
+FootballLeague "1" --> "1" LeagueCommissioner
