@@ -296,8 +296,8 @@ int main() {
     {
         try {
             cout << "\n************************** MAIN MENU ***************************\n"
-                      << "(1) REGISTER TEAMS\t\t\t(2) REGISTER PLAYERS/COACHES\n(3) REGISTER STADIUM\t\t\t(4) ADD FIXTURES\n(5) REGISTER MATCH OFFICIALS\t\t"
-                      << "(6) TICKET SALE\n(7) STADIUM SHOP\t\t\t(8) REPORTS\n(9) SAVE\t\t\t\t(10) LOAD\n"
+                      << "(1) TEAM MANAGEMENT\t\t\t(2) SQUAD MANAGEMENT\n(3) STADIUM & VENUES\t\t\t(4) FIXTURES & MATCH RESULTS\n(5) REFEREE & OFFICIALS\t\t"
+                      << "(6) BOOKING\n(7) STADIUM SHOP\t\t\t(8) LEAGUE REPORTS\n(9) SAVE\t\t\t\t(10) LOAD\n"
                       << "(12) SEARCH RECORDS\t\t\t"
                       << "(0) SAVE & EXIT\n";
             cout << "*********************************************************************\n";
