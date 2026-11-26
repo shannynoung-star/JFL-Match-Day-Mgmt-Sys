@@ -41,6 +41,69 @@ static double readDouble(const string& prompt) {
     }
 }
 
+// These functions call the validation functions in common.h and keep asking until the user enters valid data.
+static string readRequiredText(const string& prompt, const string& field) {
+    while (true) {
+        string value = readText(prompt);
+        try { return cleanText(value, field); }
+        catch (const InvalidDataException& e) { cout << e.what() << " Please try again.\n"; }
+    }
+}
+
+static int readIntRange(const string& prompt, int minimum, int maximum) {
+    while (true) {
+        int value = readInt(prompt);
+        if (value >= minimum && value <= maximum) return value;
+        cout << "Enter a whole number from " << minimum << " to " << maximum << ".\n";
+    }
+}
+
+static int readIntMinimum(const string& prompt, int minimum) {
+    while (true) {
+        int value = readInt(prompt);
+        if (value >= minimum) return value;
+        cout << "Enter a whole number that is at least " << minimum << ".\n";
+    }
+}
+
+static double readNonNegativeDouble(const string& prompt) {
+    while (true) {
+        double value = readDouble(prompt);
+        if (value >= 0) return value;
+        cout << "The amount cannot be negative. Please try again.\n";
+    }
+}
+
+static FieldCondition readFieldCondition() {
+    while (true) {
+        try { return fieldConditionFromString(readRequiredText("Field condition (EXCELLENT/GOOD/FAIR/POOR/UNPLAYABLE): ", "Field condition")); }
+        catch (const InvalidDataException& e) { cout << e.what() << " Please try again.\n"; }
+    }
+}
+
+static TicketCategory readTicketCategory() {
+    while (true) {
+        try { return ticketCategoryFromString(readRequiredText("Category (STANDARD/VIP): ", "Ticket category")); }
+        catch (const InvalidDataException& e) { cout << e.what() << " Please try again.\n"; }
+    }
+}
+
+static string readValidDate() {
+    while (true) {
+        string value = readRequiredText("Date (YYYY-MM-DD): ", "Date");
+        try { return validateDate(value); }
+        catch (const InvalidDataException& e) { cout << e.what() << " Please try again.\n"; }
+    }
+}
+
+static string readValidTime() {
+    while (true) {
+        string value = readRequiredText("Time (HH:MM, 24h): ", "Time");
+        try { parseTime(value); return value; }
+        catch (const InvalidDataException& e) { cout << e.what() << " Please try again.\n"; }
+    }
+}
+
 // ---------------- sub-menus ----------------
 static void teamMenu() 
 {
@@ -49,15 +112,15 @@ static void teamMenu()
     switch (readInt("Choose: ")) 
     {
         case 1: {
-            string name = readText("Team name: "), parish = readText("Parish: "), reg = readText("Registration number: ");
+            string name = readRequiredText("Team name: ", "Team name"), parish = readRequiredText("Parish: ", "Parish"), reg = readRequiredText("Registration number: ", "Registration number");
             auto t = league.registerTeam(name, parish, reg);
             cout << "Registered (UNREGISTERED until approved): " << t->describe() << "\n";
             break;
         }
-        case 2: league.approveTeam(readText("Registration number: ")); cout << "Team approved.\n"; break;
-        case 3: league.suspendTeam(readText("Registration number: ")); cout << "Team suspended.\n"; break;
+        case 2: league.approveTeam(readRequiredText("Registration number: ", "Registration number")); cout << "Team approved.\n"; break;
+        case 3: league.suspendTeam(readRequiredText("Registration number: ", "Registration number")); cout << "Team suspended.\n"; break;
         case 4: {
-            string reg = readText("Registration number: "), n = readText("New name: "), p = readText("New parish: ");
+            string reg = readRequiredText("Registration number: ", "Registration number"), n = readText("New name: "), p = readText("New parish: ");
             league.updateTeam(reg, n, p);
             cout << "Updated.\n";
             break;
@@ -74,36 +137,36 @@ static void peopleMenu()
     cout << "\n(1) Add Player\t\t(2) Remove player\n(3) Add coach\t\t(4) Remove coach\n(5) Show squad\t\t(6) Record goals\n";
     switch (readInt("Choose: ")) {
         case 1: {
-            string team = readText("Team reg no: "), name = readText("Name: ");
-            int age = readInt("Age: ");
-            string gender = readText("Gender: "), pos = readText("Position: ");
-            int jersey = readInt("Jersey number: ");
+            string team = readRequiredText("Team reg no: ", "Team registration number"), name = readRequiredText("Name: ", "Name");
+            int age = readIntRange("Age (16-40): ", 16, 40);
+            string gender = readRequiredText("Gender: ", "Gender"), pos = readRequiredText("Position: ", "Position");
+            int jersey = readIntRange("Jersey number (1-99): ", 1, 99);
             cout << "Added: " << league.addPlayer(team, name, age, gender, pos, jersey)->describe() << "\n";
             break;
         }
         case 2: {
-            string team = readText("Team reg no: "), id = readText("Player ID: ");
+            string team = readRequiredText("Team reg no: ", "Team registration number"), id = readRequiredText("Player ID: ", "Player ID");
             league.removePlayer(team, id);
             cout << "Removed.\n";
             break;
         }
         case 3: {
-            string team = readText("Team reg no: "), name = readText("Name: ");
-            int age = readInt("Age: ");
-            string gender = readText("Gender: "), qual = readText("Qualification: "), role = readText("Coaching role: ");
+            string team = readRequiredText("Team reg no: ", "Team registration number"), name = readRequiredText("Name: ", "Name");
+            int age = readIntRange("Age (16-40): ", 16, 40);
+            string gender = readRequiredText("Gender: ", "Gender"), qual = readRequiredText("Qualification: ", "Qualification"), role = readRequiredText("Coaching role: ", "Coaching role");
             cout << "Added: " << league.addCoach(team, name, age, gender, qual, role)->describe() << "\n";
             break;
         }
         case 4: {
-            string team = readText("Team reg no: "), id = readText("Coach ID: ");
+            string team = readRequiredText("Team reg no: ", "Team registration number"), id = readRequiredText("Coach ID: ", "Coach ID");
             league.removeCoach(team, id);
             cout << "Removed.\n";
             break;
         }
         case 5: {
-            auto team = league.requireTeam(readText("Team reg no: "));
+            auto team = league.requireTeam(readRequiredText("Team reg no: ", "Team registration number"));
             cout << team->describe() << "\n";
-            // POLYMORPHISM in action: a vector of Person pointers; describe() runs the Player or Coach version.
+            // show all players and coaches in one list
             vector<shared_ptr<Person>> everyone;
             for (const auto& p : team->getPlayers()) everyone.push_back(p);
             for (const auto& c : team->getCoaches()) everyone.push_back(c);
@@ -111,7 +174,7 @@ static void peopleMenu()
             break;
         }
         case 6: {
-            string team = readText("Team reg no: "), id = readText("Player ID: ");
+            string team = readRequiredText("Team reg no: ", "Team registration number"), id = readRequiredText("Player ID: ", "Player ID");
             league.recordGoals(team, id, readInt("Goals: "));
             cout << "Recorded.\n";
             break;
@@ -126,11 +189,11 @@ static void stadiumMenu()
     cout << "\n(1) Register stadium\t\t(2) List stadiums\n";
     switch (readInt("Choose: ")) {
         case 1: {
-            string name = readText("Name: "), loc = readText("Location: ");
-            int cap = readInt("Seating capacity: ");
+            string name = readRequiredText("Name: ", "Name"), loc = readRequiredText("Location: ", "Location");
+            int cap = readIntMinimum("Seating capacity (must be above 0): ", 1);
             cout << "Field conditions: EXCELLENT, GOOD, FAIR, POOR, UNPLAYABLE\n";
-            FieldCondition fc = fieldConditionFromString(readText("Field condition: "));
-            double price = readDouble("Ticket price (incl. GCT): ");
+            FieldCondition fc = readFieldCondition();
+            double price = readNonNegativeDouble("Ticket price (incl. GCT): ");
             cout << "Registered: " << league.registerStadium(name, loc, cap, fc, price)->describe() << "\n";
             break;
         }
@@ -146,21 +209,21 @@ static void fixtureMenu()
     switch (readInt("Choose: ")) 
     {
         case 1: {
-            string h = readText("Home team reg no: "), a = readText("Away team reg no: "), s = readText("Stadium ID: ");
-            string d = readText("Date (YYYY-MM-DD): "), t = readText("Time (HH:MM, 24h): ");
+            string h = readText("Home team reg no: "), a = readText("Away team reg no: "), s = readRequiredText("Stadium ID: ", "Stadium ID");
+            string d = readValidDate(), t = readValidTime();
             cout << "Scheduled: " << league.scheduleFixture(h, a, s, d, t)->describe() << "\n";
             break;
         }
         case 2: {
-            string f = readText("Fixture ID: "), o = readText("Official ID: ");
+            string f = readRequiredText("Fixture ID: ", "Fixture ID"), o = readRequiredText("Official ID: ", "Official ID");
             league.assignOfficial(f, o);
             cout << "Assigned.\n";
             break;
         }
         case 3: {
-            string f = readText("Fixture ID: ");
-            int hs = readInt("Home score: "), as = readInt("Away score: ");
-            int y = readInt("Yellow cards: "), r = readInt("Red cards: ");
+            string f = readRequiredText("Fixture ID: ", "Fixture ID");
+            int hs = readIntMinimum("Home score: ", 0), as = readIntMinimum("Away score: ", 0);
+            int y = readIntMinimum("Yellow cards: ", 0), r = readIntMinimum("Red cards: ", 0);
             league.recordResult(f, hs, as, y, r);
             cout << "Result recorded; standings updated.\n";
             break;
@@ -176,9 +239,10 @@ static void officialMenu()
     cout << "\n(1) Register Match Official\t\t(2) List Officials\n";
     switch (readInt("Choose: ")) {
         case 1: {
-            string name = readText("Name: ");
-            int age = readInt("Age: ");
-            string gender = readText("Gender: "), role = readText("Role (Referee/Assistant Referee/Fourth Official): "), rank = readText("Rank: ");
+            string name = readRequiredText("Name: ", "Name");
+            int age = readIntRange("Age: ", 16, 40);
+            string gender = readRequiredText("Gender: ", "Gender");
+            string role = readText("Role (Referee/Assistant Referee/Fourth Official): "), rank = readRequiredText("Rank: ", "Rank");
             cout << "Registered: " << league.registerOfficial(name, age, gender, role, rank)->describe() << "\n";
             break;
         }
@@ -190,21 +254,28 @@ static void officialMenu()
 static void ticketMenu() 
 {
     cout << "================================ Kingston Premier Football League (KPFL) Management System ======================================\n";
-    cout << "\n(1) Register spectator\t\t(2) Sell tickets\t\t(3) List spectators\n";
+    cout << "\n(1) Register supporter\t\t(2) Sell tickets\t\t(3) List supporters\n";
     switch (readInt("Choose: ")) {
         case 1: {
-            string name = readText("Name: ");
-            int age = readInt("Age: ");
-            string gender = readText("Gender: ");
+            string name = readRequiredText("Name: ", "Name");
+            int age = readIntRange("Age: ", 1, 100);
+            string gender = readRequiredText("Gender: ", "Gender");
             cout << "Registered: " << league.registerSpectator(name, age, gender)->describe() << "\n";
             break;
         }
         case 2: {
-            string fid = readText("Fixture ID: "), sid = readText("Spectator ID: ");
-            TicketCategory cat = ticketCategoryFromString(readText("Category (STANDARD/VIP): "));
-            int qty = readInt("Quantity: ");
-            double pay = readDouble("Payment amount: ");
-            cout << league.sellTickets(fid, sid, cat, qty, pay).print();
+            string fid = readRequiredText("Fixture ID: ", "Fixture ID"), sid = readRequiredText("Spectator ID: ", "Spectator ID");
+            TicketCategory cat = readTicketCategory();
+            int qty = readIntMinimum("Quantity (at least 1): ", 1);
+            while (true) {
+                double pay = readNonNegativeDouble("Payment amount: ");
+                try {
+                    cout << league.sellTickets(fid, sid, cat, qty, pay).print();
+                    break;
+                } catch (const InsufficientPaymentException& e) {
+                    cout << e.what() << " Please enter the payment again.\n";
+                }
+            }
             break;
         }
         case 3: for (const auto& s : league.getSpectators()) cout << s->describe() << "\n"; break;
@@ -221,25 +292,31 @@ static void shopMenu()
     switch (readInt("Choose: ")) {
         case 1: for (const auto& p : shop.getProducts()) cout << p->describe() << "\n"; break;
         case 2: {
-            string id = readText("Product ID: "), name = readText("Name: ");
-            double price = readDouble("Price (incl. GCT): ");
-            int stock = readInt("Stock: ");
-            shop.addProduct(make_shared<Merchandise>(id, name, price, stock, readText("Size: ")));
+            string id = readRequiredText("Product ID: ", "Product ID"), name = readRequiredText("Name: ", "Name");
+            double price = readNonNegativeDouble("Price (incl. GCT): ");
+            int stock = readIntMinimum("Stock (0 or more): ", 0);
+            shop.addProduct(make_shared<Merchandise>(id, name, price, stock, readRequiredText("Size: ", "Size")));
             cout << "Added.\n";
             break;
         }
         case 3: {
-            string id = readText("Product ID: "), name = readText("Name: ");
-            double price = readDouble("Price (incl. GCT): ");
-            int stock = readInt("Stock: ");
-            bool bev = toLower(readText("Is it a beverage? (yes/no): ")) == "yes";
+            string id = readRequiredText("Product ID: ", "Product ID"), name = readRequiredText("Name: ", "Name");
+            double price = readNonNegativeDouble("Price (incl. GCT): ");
+            int stock = readIntMinimum("Stock (0 or more): ", 0);
+            string answer;
+            while (true) {
+                answer = toLower(readRequiredText("Is it a beverage? (yes/no): ", "Answer"));
+                if (answer == "yes" || answer == "no") break;
+                cout << "Please enter yes or no.\n";
+            }
+            bool bev = (answer == "yes");
             shop.addProduct(make_shared<FoodItem>(id, name, price, stock, bev));
             cout << "Added.\n";
             break;
         }
         case 4: {
-            string id = readText("Product ID: ");
-            shop.restock(id, readInt("Quantity to add: "));
+            string id = readRequiredText("Product ID: ", "Product ID");
+            shop.restock(id, readIntMinimum("Quantity to add (at least 1): ", 1));
             cout << "Restocked.\n";
             break;
         }
@@ -248,10 +325,17 @@ static void shopMenu()
             while (true) {
                 string id = readText("Product ID to add (or DONE): ");
                 if (toUpper(id) == "DONE") break;
-                cart[toUpper(id)] = readInt("Quantity: ");
+                cart[toUpper(id)] = readIntMinimum("Quantity (at least 1): ", 1);
             }
-            double pay = readDouble("Payment amount: ");
-            cout << shop.purchase(cart, pay).print();
+            while (true) {
+                double pay = readNonNegativeDouble("Payment amount: ");
+                try {
+                    cout << shop.purchase(cart, pay).print();
+                    break;
+                } catch (const InsufficientPaymentException& e) {
+                    cout << e.what() << " Please enter the payment again.\n";
+                }
+            }
             break;
         }
         default: cout << "Invalid choice.\n";
@@ -318,7 +402,7 @@ int main() {
                     league.save(DATA_FILE);   // make sure the file matches what is in memory
                     long total = FootballLeague::recordCountInFile(DATA_FILE);
                     cout << "The data file has " << total << " records (0 = header).\n";
-                    long n = readInt("Record number to read: ");
+                    long n = readIntMinimum("Record number to read (0 or more): ", 0);
                     cout << FootballLeague::describeRecordAt(DATA_FILE, n) << "\n";
                     break;
                 }
